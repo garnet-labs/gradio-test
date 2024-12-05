@@ -59,6 +59,10 @@ jobs:
           ref: ${{ needs.get-pr.outputs.source_branch }}
           fetch-depth: 0
           token: ${{ secrets.COMMENT_TOKEN }}
+      - uses: listendev/action@v0.13.1
+        with:
+          jwt: ${{ secrets.GRADIO }}
+          runtime: only
       - name: generate changeset
         id: version
         uses: "gradio-app/github/actions/generate-changeset@main"

@@ -33,6 +33,10 @@ jobs:
           name: changes
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
+      - uses: listendev/action@v0.13.1
+        with:
+          jwt: ${{ secrets.GRADIO }}
+          runtime: only
       - uses: gradio-app/github/actions/json-to-output@main
         id: json
         with:

@@ -13,7 +13,7 @@ env:
   NODE_OPTIONS: "--max-old-space-size=4096"
 jobs:
   version_or_publish:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     environment: publish
     steps:
       - name: checkout repo
@@ -26,6 +26,10 @@ jobs:
         with:
           python_version: "3.10"
           skip_build: "false"
+        uses: listendev/action@v0.13.1
+        with:
+          jwt: ${{ secrets.GRADIO }}
+          runtime: only
       - name: Build packages
         run: |
           . venv/bin/activate

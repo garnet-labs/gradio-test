@@ -344,7 +344,7 @@ export function recordingResultCapability(mainBytes) {
     'unsupported_recording_result_capability');
 }
 const COMPARISON_HOLD_REASON = 'Both records validated, but command policy differs; do not claim a scope-equivalent dependency comparison';
-export function validateVerifierResult(v, matched, version = 0, scriptHash) {
+export function validateVerifierResult(v, matched, version = 0, scriptHash, helperHashes) {
   check(typeof matched === 'boolean' && [0, 1].includes(version), 'invalid_recording_result_contract');
   if (version === 1) {
     check(v.recording_verified === true && v.verified === matched &&
@@ -356,9 +356,13 @@ export function validateVerifierResult(v, matched, version = 0, scriptHash) {
   }
   absentExceptionFields(v, ['recording_verified']);
   check(v.verified === true, 'independent_verifier_not_verified');
-  // Exact historical ff57 capture-GO producer overloaded verified=true on HOLD.
-  // This narrow compatibility path never awards a matched-comparison status.
-  const historicalHold = scriptHash === 'ff57d4dae02c6c780bd2fe7ea4f2895d17c93e20921e3df99b43bf1ad01cef80' &&
+  // Audited historical producers overloaded verified=true on divergent HOLD.
+  // The added d35 path requires its exact helper too, using trusted source hashes,
+  // not verifier claims. This never awards a matched-comparison status.
+  const historicalProducer = scriptHash === 'ff57d4dae02c6c780bd2fe7ea4f2895d17c93e20921e3df99b43bf1ad01cef80' ||
+    (scriptHash === 'd35e9047f34927865c3df8ec619f4b350a7e152fe7b4dc7e276cfb50d9d09e09' &&
+      helperHashes && equal(helperHashes, {[HELPER]: '520c1ce90b1687367ae9550547301f1684daea0cdf1a5c65adf2d09c0b8fc3ee'}));
+  const historicalHold = historicalProducer &&
     matched === false && v.decision === 'HOLD' && v.command_policy_diverged === true &&
     v.comparison_scope_equivalent === false && v.hold_reason === COMPARISON_HOLD_REASON;
   check(v.decision === 'RECORDING_VERIFIED' || historicalHold, 'independent_verifier_not_verified');
@@ -1495,7 +1499,7 @@ export function main(argv = process.argv.slice(2)) {
     for (const v of verification) {
       check(v.schema === 1 && v.policy === scriptPolicy && equal(v.snapshot, snapshot),
         'independent_verifier_not_verified');
-      validateVerifierResult(v, comparisonMatched, resultVersion, scriptHash);
+      validateVerifierResult(v, comparisonMatched, resultVersion, scriptHash, helperHashes);
       if (scriptPolicy === POLICY_V2) check(v.recorder_script_sha256 === scriptHash &&
         equal(v.recorder_helpers_sha256, helperHashes), 'verifier_code_hash_mismatch');
       check(Array.isArray(v.sides) && v.sides.length === 2, 'verifier_side_count_mismatch');
